@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101a38" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <style>.quick-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.quick-actions button{background:#2c3d70;color:#eaf0ff}.quick-actions .primary{background:#67e8f9;color:#102045}.command-row label{flex:1}</style>
+    <title>timtik · 语音节拍计时</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header>
+        <div class="brand"><span class="brand-mark">TT</span><div><h1>timtik</h1><p>语音节拍计时</p></div></div>
+        <span id="voice-status" class="status">语音待命</span>
+      </header>
+
+      <section class="timer-card" aria-live="polite">
+        <div id="mode-label" class="eyebrow">准备开始</div>
+        <div id="time-display" class="time-display">00:00</div>
+        <p id="timer-message">说“开始计时”或“开始 3 分钟倒计时”。</p>
+        <div class="controls">
+          <button id="voice-button" class="primary">🎙 开始语音</button>
+          <button id="stop-button" class="quiet" disabled>停止并记录</button>
+        </div>
+      </section>
+
+      <section class="command-card">
+        <div class="section-title"><h2>手动开始</h2><span>不需要输入文字</span></div>
+        <div class="quick-actions"><button id="start-stopwatch" class="primary">开始计时</button><button class="countdown-preset" data-minutes="3">3 分钟</button><button class="countdown-preset" data-minutes="5">5 分钟</button><button class="countdown-preset" data-minutes="15">15 分钟</button></div>
+        <div class="command-row"><label for="countdown-minutes">自定义分钟<input id="countdown-minutes" type="number" min="1" max="1440" value="10" /></label><button id="start-countdown">开始倒计时</button></div>
+        <p id="heard-command" class="hint">每次开始都会先进行 3 秒、3 次提示音预备。</p>
+      </section>
+
+      <section class="settings-card">
+        <div class="section-title"><h2>节拍与报时</h2><span>运行时立即生效</span></div>
+        <div class="setting-grid">
+          <label>每秒滴声<select id="beep-sound"><option value="beep">清脆滴</option><option value="soft">柔和滴</option><option value="none">关闭</option></select></label>
+          <label>每 5 秒嗒声<select id="tick-sound"><option value="tick">木质嗒</option><option value="click">短促嗒</option><option value="none">关闭</option></select></label>
+          <label>报时间隔（秒）<input id="announce-interval" type="number" min="1" max="3600" value="15" /></label>
+          <label>报时提示音<select id="announce-sound"><option value="chime">提示铃</option><option value="beep">清脆滴</option><option value="none">关闭</option></select></label>
+          <label>音量<input id="volume" type="range" min="0" max="100" value="50" /></label>
+        </div>
+      </section>
+
+      <section class="history-card">
+        <div class="section-title"><h2>计时记录</h2><button id="clear-history" class="text-button">清空</button></div>
+        <ol id="history-list" class="history-list"><li class="empty">还没有记录。</li></ol>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
