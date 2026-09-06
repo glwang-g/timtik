@@ -4,6 +4,8 @@
 
 当前需求、交互决定和后续方向见 [计时器设计记录](docs/timer-design.zh-CN.md)。
 
+部署到 `timtik.freexlib.com` 的 GitHub Actions 与服务器配置步骤见 [部署说明](docs/DEPLOYMENT.zh-CN.md)。
+
 ## 第一版能力
 
 - 中文命令：`开始计时`、`开始 N 分钟倒计时`、`停止计时`；不使用文字命令。无法语音时，用开始计时、3/5/15 分钟预设或自定义分钟按钮操作。
