@@ -40,6 +40,14 @@ input, select { width: 100%; margin-top: 5px; border: 1px solid #6074ad; border-
 .history-list { display: grid; gap: 8px; margin: 15px 0 0; padding: 0; list-style: none; }
 .history-list li { display: flex; justify-content: space-between; gap: 8px; padding: 11px; border-radius: 8px; background: #0e1936; font-size: 13px; }
 .history-list span, .empty { color: #a9b7df; }
+.more-button { display: block; width: 100%; margin-top: 14px; border: 1px solid #51649d; background: #17254cdd; color: #c7d6ff; }
+.more-dialog { width: min(720px, calc(100% - 24px)); max-height: min(820px, calc(100% - 24px)); overflow: auto; border: 1px solid #6174ad; border-radius: 20px; padding: 16px; color: #eaf0ff; background: #101a38; box-shadow: 0 24px 80px #000a; }
+.more-dialog::backdrop { background: #070c1ecc; }
+.dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 4px; }
+.dialog-header h2 { font-size: 17px; }
+.dialog-header p { margin-top: 4px; color: #a9b7df; font-size: 12px; }
+.icon-button { width: 34px; height: 34px; padding: 0; background: #2c3d70; color: #eaf0ff; font-size: 25px; line-height: 1; }
+.more-dialog .settings-card, .more-dialog .history-card { margin-top: 14px; }
 
 @media (max-width: 480px) {
   .setting-grid { grid-template-columns: 1fr; }
