@@ -60,16 +60,27 @@ function sound(kind, slot) {
   oscillator.start(); oscillator.stop(ctx.currentTime + options[2]);
 }
 function speak(text) {
-  if (!("speechSynthesis" in window)) return;
+  if (!("speechSynthesis" in window)) {
+    message.textContent = "当前浏览器不支持语音报时；提示铃仍会播放。";
+    return;
+  }
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN"; utterance.rate = 1.05;
+  utterance.onerror = () => { message.textContent = "语音报时未能播放；请检查浏览器的语音与自动播放设置。"; };
   speechSynthesis.speak(utterance);
+}
+function stopListening(note = "麦克风已关闭") {
+  state.wantsListening = false;
+  if (state.recognition && state.isListening) state.recognition.abort();
+  state.isListening = false;
+  voiceStatus.textContent = note;
 }
 function setIdle(note = "说“开始计时”或“倒计时 3 分钟”。") {
   if (state.preparation) clearTimeout(state.preparation);
   state.mode = "idle"; state.preparation = null; state.pendingMode = null; state.pendingDuration = 0;
   state.lastSecond = -1; state.runId += 1; stopButton.disabled = true;
+  stopListening();
   modeLabel.textContent = "准备开始"; message.textContent = note;
 }
 function begin(mode, durationSeconds = 0) {
@@ -203,14 +214,16 @@ function setupRecognition() {
   recognition.onstart = () => { state.isListening = true; voiceStatus.textContent = "正在听…"; };
   recognition.onend = () => {
     state.isListening = false;
-    if (!state.wantsListening) { voiceStatus.textContent = "语音已暂停"; return; }
+    if (!state.wantsListening) { voiceStatus.textContent = "麦克风已关闭"; return; }
     voiceStatus.textContent = "语音待命";
     window.setTimeout(startListening, 250);
   };
   recognition.onerror = (event) => {
     state.isListening = false;
     voiceStatus.textContent = event.error === "not-allowed" ? "请允许麦克风权限" : "语音未识别，继续待命";
-    if (event.error === "not-allowed" || event.error === "service-not-allowed") state.wantsListening = false;
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      state.wantsListening = false;
+    }
   };
   recognition.onresult = (event) => {
     for (let index = event.resultIndex; index < event.results.length; index += 1) {
@@ -272,6 +285,9 @@ document.querySelectorAll(".countdown-preset").forEach((button) => button.onclic
 $("start-countdown").onclick = () => { getAudio().resume(); prepare("countdown", Math.max(1, Number($("countdown-minutes").value) || 1) * 60); };
 stopButton.onclick = () => stopAndRecord("手动停止");
 $("clear-history").onclick = () => { localStorage.removeItem(storageKey); renderHistory(); };
+$("more-button").onclick = () => $("more-dialog").showModal();
+$("close-more").onclick = () => $("more-dialog").close();
+$("more-dialog").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
 ["short", "long", "announce"].forEach(bindSoundUpload);
 renderHistory(); setupRecognition(); loadCustomSounds();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js");
