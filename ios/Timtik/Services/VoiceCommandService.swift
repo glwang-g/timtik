@@ -49,7 +49,7 @@ final class VoiceCommandService: NSObject, ObservableObject {
             }
         }
         let microphoneAllowed = await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { continuation.resume(returning: $0) }
+            AVAudioApplication.requestRecordPermission { continuation.resume(returning: $0) }
         }
         return speechAllowed && microphoneAllowed
     }
@@ -62,7 +62,7 @@ final class VoiceCommandService: NSObject, ObservableObject {
         stopListening()
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .duckOthers, .allowBluetooth])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .duckOthers, .allowBluetoothHFP])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
             let request = SFSpeechAudioBufferRecognitionRequest()
