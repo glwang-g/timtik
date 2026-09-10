@@ -20,9 +20,23 @@ struct TimtikApp: App {
                 .onAppear {
                     voice.onCommand = { timer.handle($0) }
                     consumeSiriCommand()
+                    timer.requestNotificationPermission()
+                    voice.startListening()
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { consumeSiriCommand() }
+                    switch phase {
+                    case .active:
+                        consumeSiriCommand()
+                        voice.startListening()
+                    case .background:
+                        // iOS does not permit continuous speech recognition while
+                        // locked or in the background. Siri remains the voice entry.
+                        voice.stopListening()
+                    case .inactive:
+                        break
+                    @unknown default:
+                        break
+                    }
                 }
         }
     }

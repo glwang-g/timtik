@@ -56,10 +56,10 @@ struct ContentView: View {
                         Label(voice.status, systemImage: "mic.fill")
                             .foregroundStyle(voice.status == "正在听…" ? .red : .secondary)
                         Spacer()
-                        Button("开始语音") { voice.startListening() }
-                        Button("关闭") { voice.stopListening() }
                     }
-                    Text(voice.transcript.isEmpty ? "支持：开始计时、倒计时 3 分钟、停止。" : "识别：\(voice.transcript)")
+                    Text(voice.transcript.isEmpty
+                         ? "前台自动监听：开始计时、倒计时 3 分钟、停止。锁屏后可用 Siri。"
+                         : "识别：\(voice.transcript)")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,6 +68,8 @@ struct ContentView: View {
                 .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
 
+                recentHistory
+
                 Spacer()
             }
             .navigationTitle("timtik")
@@ -75,7 +77,6 @@ struct ContentView: View {
                 Button("记录") { showingHistory = true }
             }
             .sheet(isPresented: $showingHistory) { HistoryView(history: history) }
-            .task { voice.startListening() }
         }
     }
 
@@ -86,6 +87,38 @@ struct ContentView: View {
         case .stopwatch: "计时进行中"
         case .countdown: "倒计时进行中"
         }
+    }
+
+    private var recentHistory: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("最近记录")
+                    .font(.headline)
+                Spacer()
+                Button("查看全部") { showingHistory = true }
+                    .font(.footnote)
+            }
+            if history.records.isEmpty {
+                Text("还没有记录")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(history.records.prefix(3)) { record in
+                    HStack(spacing: 8) {
+                        Image(systemName: record.mode == .countdown ? "timer" : "stopwatch")
+                            .foregroundStyle(.tint)
+                        Text(record.summary)
+                            .lineLimit(1)
+                        Spacer()
+                        Text(record.recordedAt.formatted(date: .omitted, time: .shortened))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.footnote)
+                }
+            }
+        }
+        .padding(.horizontal)
     }
 }
 
