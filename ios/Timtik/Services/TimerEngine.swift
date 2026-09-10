@@ -115,7 +115,15 @@ final class TimerEngine: ObservableObject {
         guard elapsed != lastElapsed else { return }
         lastElapsed = elapsed
         guard elapsed > 0 else { return }
-        if elapsed.isMultiple(of: 5) { audio.longTick() } else { audio.shortTick() }
+        let longTickStoredValue = UserDefaults.standard.object(forKey: "timtik.audio.long-tick-interval") as? Int
+        let longTickInterval = max(1, longTickStoredValue ?? 5)
+        let shortTickStoredValue = UserDefaults.standard.object(forKey: "timtik.audio.short-tick-interval") as? Int
+        let shortTickInterval = max(1, shortTickStoredValue ?? 1)
+        if elapsed.isMultiple(of: longTickInterval) {
+            audio.longTick()
+        } else if elapsed.isMultiple(of: shortTickInterval) {
+            audio.shortTick()
+        }
         if elapsed.isMultiple(of: 15) {
             audio.announce(mode == .countdown ? TimeFormatter.words(visible) : "\(elapsed) 秒")
         }
