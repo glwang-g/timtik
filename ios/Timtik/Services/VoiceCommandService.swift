@@ -61,6 +61,16 @@ final class VoiceCommandService: NSObject, ObservableObject {
             self.request = request
             let input = audioEngine.inputNode
             let format = input.outputFormat(forBus: 0)
+            // A Simulator can report a zero-Hz, zero-channel input route when it
+            // has no microphone source. Installing a tap for that format throws
+            // an Objective-C exception (rather than a Swift error), so validate
+            // before installing it and leave the rest of the timer usable.
+            guard format.sampleRate > 0, format.channelCount > 0 else {
+                self.request = nil
+                try? session.setActive(false, options: .notifyOthersOnDeactivation)
+                status = "没有可用麦克风输入，可手动计时"
+                return
+            }
             input.installTap(onBus: 0, bufferSize: 1_024, format: format) { buffer, _ in request.append(buffer) }
             audioEngine.prepare()
             try audioEngine.start()

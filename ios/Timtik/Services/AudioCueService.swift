@@ -45,16 +45,24 @@ final class AudioCueService {
         UIImpactFeedbackGenerator(style: style).impactOccurred()
         guard isConfigured else { return }
 
-        let sampleRate = 44_100.0
+        // The simulator's output route is normally stereo while an iPhone route
+        // may differ (for example Bluetooth).  A scheduled buffer must exactly
+        // match the player node's output format; a hard-coded mono buffer causes
+        // an Objective-C audio exception instead of a recoverable Swift error.
+        let format = player.outputFormat(forBus: 0)
+        let sampleRate = format.sampleRate
+        guard sampleRate > 0, format.channelCount > 0 else { return }
         let frameCount = AVAudioFrameCount(sampleRate * duration)
-        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),
-              let data = buffer.floatChannelData?[0] else { return }
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),
+              let channels = buffer.floatChannelData else { return }
         buffer.frameLength = frameCount
         for index in 0 ..< Int(frameCount) {
             let progress = Double(index) / sampleRate
             let envelope = Float(max(0, 1 - progress / duration) * 0.18)
-            data[index] = sin(Float(2 * Double.pi * frequency * progress)) * envelope
+            let sample = sin(Float(2 * Double.pi * frequency * progress)) * envelope
+            for channel in 0 ..< Int(format.channelCount) {
+                channels[channel][index] = sample
+            }
         }
         player.scheduleBuffer(buffer, at: nil)
         if !player.isPlaying { player.play() }
