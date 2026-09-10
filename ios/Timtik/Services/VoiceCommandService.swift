@@ -11,10 +11,17 @@ final class VoiceCommandService: NSObject, ObservableObject {
     private let audioEngine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var isListening = false
+    private var permissionRequestToken: UUID?
 
     func startListening() {
+        guard !isListening, permissionRequestToken == nil else { return }
+        let token = UUID()
+        permissionRequestToken = token
         Task {
             let allowed = await requestPermissions()
+            guard permissionRequestToken == token else { return }
+            permissionRequestToken = nil
             guard allowed else {
                 status = "请允许麦克风和语音识别权限"
                 return
@@ -24,12 +31,14 @@ final class VoiceCommandService: NSObject, ObservableObject {
     }
 
     func stopListening() {
+        permissionRequestToken = nil
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         request?.endAudio()
         recognitionTask?.cancel()
         request = nil
         recognitionTask = nil
+        isListening = false
         status = "麦克风已关闭"
     }
 
@@ -74,6 +83,7 @@ final class VoiceCommandService: NSObject, ObservableObject {
             input.installTap(onBus: 0, bufferSize: 1_024, format: format) { buffer, _ in request.append(buffer) }
             audioEngine.prepare()
             try audioEngine.start()
+            isListening = true
             status = "正在听…"
 
             recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
@@ -92,7 +102,10 @@ final class VoiceCommandService: NSObject, ObservableObject {
                     }
                 }
                 if error != nil {
-                    Task { @MainActor in self.status = "语音待命" }
+                    Task { @MainActor in
+                        self.isListening = false
+                        self.status = "语音待命"
+                    }
                 }
             }
         } catch {

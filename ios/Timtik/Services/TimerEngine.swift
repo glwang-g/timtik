@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 
 @MainActor
 final class TimerEngine: ObservableObject {
@@ -67,6 +68,7 @@ final class TimerEngine: ObservableObject {
         runTask?.cancel()
         runTask = nil
         if reason != "倒计时结束" { audio.stopSpeech() }
+        TimerNotificationService.cancelCountdownCompletion()
         mode = .idle
         preparationMode = .idle
         visibleSeconds = 0
@@ -80,7 +82,14 @@ final class TimerEngine: ObservableObject {
         startedAt = .now
         lastElapsed = -1
         message = nextMode == .countdown ? "剩余 \(TimeFormatter.words(duration))" : "计时进行中"
+        if nextMode == .countdown {
+            TimerNotificationService.scheduleCountdownCompletion(after: duration)
+        }
         updateLoop()
+    }
+
+    func requestNotificationPermission() {
+        TimerNotificationService.requestAuthorization()
     }
 
     private func updateLoop() {
@@ -115,5 +124,31 @@ final class TimerEngine: ObservableObject {
     private func elapsedSeconds() -> Int {
         guard let startedAt else { return 0 }
         return max(0, Int(Date.now.timeIntervalSince(startedAt)))
+    }
+}
+
+private enum TimerNotificationService {
+    private static let completionIdentifier = "timtik.countdown.completed"
+
+    static func requestAuthorization() {
+        Task {
+            _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+        }
+    }
+
+    static func scheduleCountdownCompletion(after seconds: Int) {
+        guard seconds > 0 else { return }
+        cancelCountdownCompletion()
+        let content = UNMutableNotificationContent()
+        content.title = "timtik 倒计时结束"
+        content.body = "时间到了"
+        content.sound = .default
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: false)
+        let request = UNNotificationRequest(identifier: completionIdentifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    static func cancelCountdownCompletion() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [completionIdentifier])
     }
 }
