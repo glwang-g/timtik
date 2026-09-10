@@ -156,7 +156,10 @@ struct ContentView: View {
 
 private struct TimerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("timtik.audio.tick-profile") private var tickProfile = "crisp"
+    @AppStorage("timtik.audio.short-tick-profile") private var shortTickProfile = "crisp"
+    @AppStorage("timtik.audio.long-tick-profile") private var longTickProfile = "crisp"
+    @AppStorage("timtik.audio.short-tick-interval") private var shortTickInterval = 1
+    @AppStorage("timtik.audio.long-tick-interval") private var longTickInterval = 5
     @AppStorage("timtik.audio.short-tick-path") private var shortTickPath = ""
     @AppStorage("timtik.audio.long-tick-path") private var longTickPath = ""
     @AppStorage("timtik.audio.speech-enabled") private var speechEnabled = true
@@ -168,20 +171,32 @@ private struct TimerSettingsView: View {
         NavigationStack {
             Form {
                 Section("节拍提示音") {
-                    Picker("声音方案", selection: $tickProfile) {
+                    Stepper("每 \(shortTickInterval) 秒短滴", value: $shortTickInterval, in: 1 ... 60)
+                    Picker("短滴音色", selection: $shortTickProfile) {
                         Text("清脆").tag("crisp")
                         Text("柔和").tag("soft")
                         Text("静音").tag("silent")
                         Text("自定义音频").tag("custom")
                     }
-
-                    if tickProfile == "custom" {
+                    if shortTickProfile == "custom" {
                         Button { importingShortTick = true } label: {
-                            soundFileRow(title: "每秒短滴", path: shortTickPath)
+                            soundFileRow(title: "选择短滴音频", path: shortTickPath)
                         }
+                    }
+
+                    Stepper("每 \(longTickInterval) 秒长滴", value: $longTickInterval, in: 1 ... 60)
+                    Picker("长滴音色", selection: $longTickProfile) {
+                        Text("清脆").tag("crisp")
+                        Text("柔和").tag("soft")
+                        Text("静音").tag("silent")
+                        Text("自定义音频").tag("custom")
+                    }
+                    if longTickProfile == "custom" {
                         Button { importingLongTick = true } label: {
-                            soundFileRow(title: "每 5 秒长滴", path: longTickPath)
+                            soundFileRow(title: "选择长滴音频", path: longTickPath)
                         }
+                    }
+                    if shortTickProfile == "custom" || longTickProfile == "custom" {
                         Text("导入后会复制到 App 内。未导入的项目会回退为清脆提示音。")
                             .font(.footnote)
                             .foregroundStyle(.secondary)

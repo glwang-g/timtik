@@ -27,7 +27,7 @@ final class AudioCueService {
     }
 
     func shortTick() {
-        switch tickProfile {
+        switch shortTickProfile {
         case "silent": return
         case "custom" where playCustomTone(pathKey: "timtik.audio.short-tick-path"): return
         case "soft": tone(frequency: 880, duration: 0.08, style: .soft)
@@ -36,7 +36,7 @@ final class AudioCueService {
     }
 
     func longTick() {
-        switch tickProfile {
+        switch longTickProfile {
         case "silent": return
         case "custom" where playCustomTone(pathKey: "timtik.audio.long-tick-path"): return
         case "soft": tone(frequency: 440, duration: 0.22, style: .soft)
@@ -57,8 +57,12 @@ final class AudioCueService {
 
     func stopSpeech() { speech.stopSpeaking(at: .immediate) }
 
-    private var tickProfile: String {
-        UserDefaults.standard.string(forKey: "timtik.audio.tick-profile") ?? "crisp"
+    private var shortTickProfile: String {
+        UserDefaults.standard.string(forKey: "timtik.audio.short-tick-profile") ?? "crisp"
+    }
+
+    private var longTickProfile: String {
+        UserDefaults.standard.string(forKey: "timtik.audio.long-tick-profile") ?? "crisp"
     }
 
     private func playCustomTone(pathKey: String) -> Bool {
