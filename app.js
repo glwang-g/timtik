@@ -59,11 +59,18 @@ function sound(kind, slot) {
   oscillator.connect(gain).connect(ctx.destination);
   oscillator.start(); oscillator.stop(ctx.currentTime + options[2]);
 }
+function primeSpeech() {
+  if (!("speechSynthesis" in window)) return;
+  // Mobile browsers can suspend the speech engine while a timer is running.
+  // Resume it while handling a user gesture, then keep it awake at each report.
+  speechSynthesis.resume();
+}
 function speak(text) {
   if (!("speechSynthesis" in window)) {
     message.textContent = "当前浏览器不支持语音报时；提示铃仍会播放。";
     return;
   }
+  primeSpeech();
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN"; utterance.rate = 1.05;
@@ -94,6 +101,7 @@ function begin(mode, durationSeconds = 0) {
   update(state.runId);
 }
 function prepare(mode, durationSeconds = 0) {
+  primeSpeech();
   if (state.mode === "preparing") clearTimeout(state.preparation);
   else if (state.mode !== "idle") stopAndRecord("新的开始命令");
   state.mode = "preparing"; state.durationSeconds = durationSeconds; state.elapsed = 0;
@@ -191,10 +199,13 @@ function countdownFromCommand(text) {
   }
   return null;
 }
-function execute(command) {
+function execute(command, isFinal = true) {
   const text = command.replace(/[\s，。,.！!？?]/g, "");
   $("heard-command").textContent = `识别：${text || "（空）"}`;
-  if (/停止/.test(text)) return stopAndRecord("语音停止");
+  // A one-word stop command is often held as an interim result by Chromium.
+  // Act on it immediately; other commands still wait for a final result.
+  if (/(?:停止|停下|暂停|结束)(?:计时|倒计时|秒表)?/.test(text)) return stopAndRecord("语音停止");
+  if (!isFinal) return;
   const durationSeconds = countdownFromCommand(text);
   if (durationSeconds) return prepare("countdown", durationSeconds);
   if (/开始计时|开始秒表/.test(text)) return prepare("stopwatch");
@@ -202,6 +213,7 @@ function execute(command) {
 }
 function startListening() {
   getAudio().resume();
+  primeSpeech();
   state.wantsListening = true;
   if (!state.recognition || state.isListening) return;
   try { state.recognition.start(); } catch { voiceStatus.textContent = "语音正在待命"; }
@@ -210,7 +222,7 @@ function setupRecognition() {
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) { voiceStatus.textContent = "浏览器不支持语音识别"; $("voice-button").disabled = true; return; }
   const recognition = new Recognition();
-  recognition.lang = "zh-CN"; recognition.interimResults = false; recognition.continuous = true;
+  recognition.lang = "zh-CN"; recognition.interimResults = true; recognition.continuous = true;
   recognition.onstart = () => { state.isListening = true; voiceStatus.textContent = "正在听…"; };
   recognition.onend = () => {
     state.isListening = false;
@@ -227,7 +239,8 @@ function setupRecognition() {
   };
   recognition.onresult = (event) => {
     for (let index = event.resultIndex; index < event.results.length; index += 1) {
-      if (event.results[index].isFinal) execute(event.results[index][0].transcript);
+      const result = event.results[index];
+      execute(result[0].transcript, result.isFinal);
     }
   };
   state.recognition = recognition;
@@ -280,9 +293,9 @@ function bindSoundUpload(slot) {
 }
 
 $("voice-button").onclick = startListening;
-$("start-stopwatch").onclick = () => { getAudio().resume(); prepare("stopwatch"); };
-document.querySelectorAll(".countdown-preset").forEach((button) => button.onclick = () => { getAudio().resume(); prepare("countdown", Number(button.dataset.minutes) * 60); });
-$("start-countdown").onclick = () => { getAudio().resume(); prepare("countdown", Math.max(1, Number($("countdown-minutes").value) || 1) * 60); };
+$("start-stopwatch").onclick = () => { getAudio().resume(); primeSpeech(); prepare("stopwatch"); };
+document.querySelectorAll(".countdown-preset").forEach((button) => button.onclick = () => { getAudio().resume(); primeSpeech(); prepare("countdown", Number(button.dataset.minutes) * 60); });
+$("start-countdown").onclick = () => { getAudio().resume(); primeSpeech(); prepare("countdown", Math.max(1, Number($("countdown-minutes").value) || 1) * 60); };
 stopButton.onclick = () => stopAndRecord("手动停止");
 $("clear-history").onclick = () => { localStorage.removeItem(storageKey); renderHistory(); };
 $("more-button").onclick = () => $("more-dialog").showModal();
